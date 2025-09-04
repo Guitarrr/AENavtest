@@ -37,6 +37,19 @@ dependencies {
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
+    
+    // YouTube API and networking
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.gson)
+    
+    // Image loading
+    implementation(libs.glide)
+    
+    // UI components
+    implementation(libs.recyclerview)
+    implementation(libs.cardview)
+    
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

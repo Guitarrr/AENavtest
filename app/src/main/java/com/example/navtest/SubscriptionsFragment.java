@@ -1,64 +1,170 @@
 package com.example.navtest;
 
 import android.os.Bundle;
-
-import androidx.fragment.app.Fragment;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link SubscriptionsFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+
+import com.bumptech.glide.Glide;
+import com.example.navtest.model.YouTubeChannel;
+import com.example.navtest.utils.YouTubeDataManager;
+
+import java.text.NumberFormat;
+import java.util.Locale;
+
 public class SubscriptionsFragment extends Fragment {
 
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
-
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
+    private ProgressBar progressBar;
+    private View channelInfoView;
+    private ImageView channelImageView;
+    private TextView channelNameTextView;
+    private TextView subscriberCountTextView;
+    private TextView videoCountTextView;
+    private TextView viewCountTextView;
+    private TextView descriptionTextView;
+    
+    private YouTubeDataManager dataManager;
 
     public SubscriptionsFragment() {
         // Required empty public constructor
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment SubscriptionsFragment.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static SubscriptionsFragment newInstance(String param1, String param2) {
-        SubscriptionsFragment fragment = new SubscriptionsFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
-        return fragment;
+    public static SubscriptionsFragment newInstance() {
+        return new SubscriptionsFragment();
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
+        dataManager = new YouTubeDataManager();
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_subscriptions, container, false);
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        
+        initViews(view);
+        loadChannelInfo();
+    }
+    
+    private void initViews(View view) {
+        progressBar = view.findViewById(R.id.progressBar);
+        channelInfoView = view.findViewById(R.id.channelInfoView);
+        channelImageView = view.findViewById(R.id.channelImageView);
+        channelNameTextView = view.findViewById(R.id.channelNameTextView);
+        subscriberCountTextView = view.findViewById(R.id.subscriberCountTextView);
+        videoCountTextView = view.findViewById(R.id.videoCountTextView);
+        viewCountTextView = view.findViewById(R.id.viewCountTextView);
+        descriptionTextView = view.findViewById(R.id.descriptionTextView);
+    }
+    
+    private void loadChannelInfo() {
+        dataManager.getAespaChannelInfo(new YouTubeDataManager.ChannelCallback() {
+            @Override
+            public void onSuccess(YouTubeChannel channel) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        displayChannelInfo(channel);
+                        progressBar.setVisibility(View.GONE);
+                    });
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        Toast.makeText(getContext(), "Error loading channel info: " + error, Toast.LENGTH_SHORT).show();
+                        progressBar.setVisibility(View.GONE);
+                    });
+                }
+            }
+        });
+    }
+    
+    private void displayChannelInfo(YouTubeChannel channel) {
+        // Set channel name
+        channelNameTextView.setText(channel.getSnippet().getTitle());
+        
+        // Set description
+        String description = channel.getSnippet().getDescription();
+        if (description != null && !description.isEmpty()) {
+            // Truncate description if too long
+            if (description.length() > 200) {
+                description = description.substring(0, 200) + "...";
+            }
+            descriptionTextView.setText(description);
+        }
+        
+        // Set subscriber count
+        if (channel.getStatistics() != null && channel.getStatistics().getSubscriberCount() != null) {
+            long subscriberCount = Long.parseLong(channel.getStatistics().getSubscriberCount());
+            String formattedSubscribers = formatNumber(subscriberCount) + " subscribers";
+            subscriberCountTextView.setText(formattedSubscribers);
+        }
+        
+        // Set video count
+        if (channel.getStatistics() != null && channel.getStatistics().getVideoCount() != null) {
+            long videoCount = Long.parseLong(channel.getStatistics().getVideoCount());
+            String formattedVideos = NumberFormat.getInstance().format(videoCount) + " videos";
+            videoCountTextView.setText(formattedVideos);
+        }
+        
+        // Set view count
+        if (channel.getStatistics() != null && channel.getStatistics().getViewCount() != null) {
+            long viewCount = Long.parseLong(channel.getStatistics().getViewCount());
+            String formattedViews = formatNumber(viewCount) + " total views";
+            viewCountTextView.setText(formattedViews);
+        }
+        
+        // Load channel thumbnail
+        String thumbnailUrl = getBestThumbnailUrl(channel);
+        if (thumbnailUrl != null) {
+            Glide.with(this)
+                    .load(thumbnailUrl)
+                    .placeholder(R.drawable.ic_launcher_foreground)
+                    .error(R.drawable.ic_launcher_foreground)
+                    .into(channelImageView);
+        }
+        
+        channelInfoView.setVisibility(View.VISIBLE);
+    }
+    
+    private String getBestThumbnailUrl(YouTubeChannel channel) {
+        YouTubeChannel.Thumbnails thumbnails = channel.getSnippet().getThumbnails();
+        if (thumbnails.getHigh() != null) {
+            return thumbnails.getHigh().getUrl();
+        } else if (thumbnails.getMedium() != null) {
+            return thumbnails.getMedium().getUrl();
+        } else if (thumbnails.getDefaultThumbnail() != null) {
+            return thumbnails.getDefaultThumbnail().getUrl();
+        }
+        return null;
+    }
+    
+    private String formatNumber(long number) {
+        if (number >= 1000000000) {
+            return String.format(Locale.getDefault(), "%.1fB", number / 1000000000.0);
+        } else if (number >= 1000000) {
+            return String.format(Locale.getDefault(), "%.1fM", number / 1000000.0);
+        } else if (number >= 1000) {
+            return String.format(Locale.getDefault(), "%.1fK", number / 1000.0);
+        } else {
+            return NumberFormat.getInstance().format(number);
+        }
     }
 }

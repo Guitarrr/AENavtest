@@ -1,64 +1,99 @@
 package com.example.navtest;
 
 import android.os.Bundle;
-
-import androidx.fragment.app.Fragment;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link ShortsFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.navtest.adapter.VideoAdapter;
+import com.example.navtest.model.YouTubeVideo;
+import com.example.navtest.utils.YouTubeDataManager;
+
+import java.util.List;
+
 public class ShortsFragment extends Fragment {
 
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
-
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
+    private RecyclerView shortsRecyclerView;
+    private VideoAdapter shortsAdapter;
+    private ProgressBar progressBar;
+    private TextView titleTextView;
+    
+    private YouTubeDataManager dataManager;
 
     public ShortsFragment() {
         // Required empty public constructor
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment ShortsFragment.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static ShortsFragment newInstance(String param1, String param2) {
-        ShortsFragment fragment = new ShortsFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
-        return fragment;
+    public static ShortsFragment newInstance() {
+        return new ShortsFragment();
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
+        dataManager = new YouTubeDataManager();
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_shorts, container, false);
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        
+        initViews(view);
+        setupRecyclerView();
+        loadShorts();
+    }
+    
+    private void initViews(View view) {
+        shortsRecyclerView = view.findViewById(R.id.shortsRecyclerView);
+        progressBar = view.findViewById(R.id.progressBar);
+        titleTextView = view.findViewById(R.id.titleTextView);
+    }
+    
+    private void setupRecyclerView() {
+        shortsAdapter = new VideoAdapter(null, getContext());
+        shortsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        shortsRecyclerView.setAdapter(shortsAdapter);
+    }
+    
+    private void loadShorts() {
+        // For now, we'll load regular videos as "shorts"
+        // In a real implementation, you might want to filter for actual YouTube Shorts
+        dataManager.getAespaVideos(new YouTubeDataManager.VideosCallback() {
+            @Override
+            public void onSuccess(List<YouTubeVideo> videos) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        shortsAdapter.updateVideos(videos);
+                        progressBar.setVisibility(View.GONE);
+                        titleTextView.setText("Aespa Shorts and Videos");
+                    });
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        Toast.makeText(getContext(), "Error loading shorts: " + error, Toast.LENGTH_SHORT).show();
+                        progressBar.setVisibility(View.GONE);
+                    });
+                }
+            }
+        });
     }
 }

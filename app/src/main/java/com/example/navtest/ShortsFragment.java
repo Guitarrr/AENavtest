@@ -18,6 +18,7 @@ import com.example.navtest.adapter.VideoAdapter;
 import com.example.navtest.model.YouTubeVideo;
 import com.example.navtest.utils.YouTubeDataManager;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ShortsFragment extends Fragment {
@@ -65,7 +66,7 @@ public class ShortsFragment extends Fragment {
     }
     
     private void setupRecyclerView() {
-        shortsAdapter = new VideoAdapter(null, getContext());
+        shortsAdapter = new VideoAdapter(new ArrayList<>(), getContext());
         shortsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         shortsRecyclerView.setAdapter(shortsAdapter);
     }

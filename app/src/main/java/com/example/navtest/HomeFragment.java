@@ -22,6 +22,7 @@ import com.example.navtest.model.YouTubeVideo;
 import com.example.navtest.utils.YouTubeDataManager;
 
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -81,7 +82,7 @@ public class HomeFragment extends Fragment {
     }
     
     private void setupRecyclerView() {
-        videoAdapter = new VideoAdapter(null, getContext());
+        videoAdapter = new VideoAdapter(new ArrayList<>(), getContext());
         videosRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         videosRecyclerView.setAdapter(videoAdapter);
     }

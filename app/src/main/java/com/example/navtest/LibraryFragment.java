@@ -18,6 +18,7 @@ import com.example.navtest.adapter.VideoAdapter;
 import com.example.navtest.model.YouTubeVideo;
 import com.example.navtest.utils.YouTubeDataManager;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class LibraryFragment extends Fragment {
@@ -65,7 +66,7 @@ public class LibraryFragment extends Fragment {
     }
     
     private void setupRecyclerView() {
-        libraryAdapter = new VideoAdapter(null, getContext());
+        libraryAdapter = new VideoAdapter(new ArrayList<>(), getContext());
         libraryRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         libraryRecyclerView.setAdapter(libraryAdapter);
     }

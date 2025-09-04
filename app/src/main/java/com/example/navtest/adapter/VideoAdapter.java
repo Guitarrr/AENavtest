@@ -40,13 +40,15 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.VideoViewHol
     
     @Override
     public void onBindViewHolder(@NonNull VideoViewHolder holder, int position) {
-        YouTubeVideo video = videos.get(position);
-        holder.bind(video);
+        if (videos != null && position < videos.size()) {
+            YouTubeVideo video = videos.get(position);
+            holder.bind(video);
+        }
     }
     
     @Override
     public int getItemCount() {
-        return videos.size();
+        return videos != null ? videos.size() : 0;
     }
     
     public void updateVideos(List<YouTubeVideo> newVideos) {
